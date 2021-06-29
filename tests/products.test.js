@@ -26,7 +26,7 @@ beforeAll(async () => {
     fakeProductId = await connection.query(`
     INSERT INTO products (name, "availableQuantity", price, description, image, "categoryId")
     VALUES ($1, $2, $3, $4, $5, $6) RETURNING "productId"`, 
-    ['TESTING NAME ITEM', 700, 5000, 'TESTING DESCRIPTION', 'TESTING IMAGE', 1]);
+    ['TESTING NAME ITEM', 700, 5000, 'TESTING DESCRIPTION', 'https://blog.bydoor.com/wp-content/uploads/2016/10/verdades-e-mitos-sobre-regras-internas-do-condominio.jpeg', 1]);
 });
 
 describe("GET /product/id", () => {    
