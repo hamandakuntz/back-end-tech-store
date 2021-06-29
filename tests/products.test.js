@@ -1,11 +1,11 @@
 import {app, connection} from '../src/app'
 import supertest from 'supertest';
 import bcrypt from 'bcrypt';
-import { it } from '@jest/globals';
 
 const fakeUser = { name: 'Test User', email: 'test@test.com', password: "123456"};
 const fakeToken = "1234";
 const authHeader = `Bearer ${fakeToken}`;
+let fakeProductId = null;
 
 beforeAll(async () => {
     await connection.query(`DELETE FROM users`);
@@ -23,26 +23,26 @@ beforeAll(async () => {
     INSERT INTO sessions ("userId", token) VALUES ($1, $2)`, 
     [user.rows[0].id, fakeToken]);
     
-    await connection.query(`
+    fakeProductId = await connection.query(`
     INSERT INTO products (name, "availableQuantity", price, description, image, "categoryId")
-    VALUES ($1, $2, $3, $4, $5, $6)`, 
+    VALUES ($1, $2, $3, $4, $5, $6) RETURNING "productId"`, 
     ['TESTING NAME ITEM', 700, 5000, 'TESTING DESCRIPTION', 'TESTING IMAGE', 1]);
-})
+});
 
 describe("GET /product/id", () => {    
     it("returns 200 for a authenticated user", async () => {
-        const result = await supertest(app).get("/product/1").set ("Authorization", authHeader);
+        const result = await supertest(app).get(`/product/${fakeProductId.rows[0].productId}`).set("Authorization", authHeader);
         expect(result.status).toEqual(200);
     });
 
     it("returns 400 for a non sended token in the requisition", async () => {      
-        const result = await supertest(app).get("/product/1");
+        const result = await supertest(app).get(`/product/${fakeProductId.rows[0].productId}`);
         expect(result.status).toEqual(400);
     });
 
     it("returns 401 for a unauthorized token", async () => {
         const newAuthHeader = "Bearer 123";
-        const result = await supertest(app).get("/product/1").set ("Authorization", newAuthHeader);
+        const result = await supertest(app).get(`/product/${fakeProductId.rows[0].productId}`).set("Authorization", newAuthHeader);
         expect(result.status).toEqual(401);
     });
 
@@ -54,14 +54,17 @@ describe("GET /product/id", () => {
             WHERE "productId" = $1            
         `, [id]);   
 
-        const result = await supertest(app).get(`/product/${id}`).set ("Authorization", authHeader);
+        const result = await supertest(app).get(`/product/${id}`).set("Authorization", authHeader);
         expect(result.status).toEqual(404);
+    });
+   
+    it("returns the expected object info", async () => { 
+        const result = await supertest(app).get(`/product/${fakeProductId.rows[0].productId}`).set("Authorization", authHeader); 
+        expect(result.body).toEqual(expect.objectContaining({"name": expect.any(String), "availableQuantity": expect.any(Number), "price": expect.any(Number),
+        "description": expect.any(String), "image": expect.any(String), "categoryId": expect.any(Number)})); 
     });
 });
 
-afterAll( async () => {   
-    await connection.query(`DELETE FROM users`);
-    await connection.query(`DELETE FROM sessions`);
-    await connection.query(`DELETE FROM products`);
+afterAll(() => {     
     connection.end();
 });
