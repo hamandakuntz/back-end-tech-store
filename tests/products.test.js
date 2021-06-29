@@ -65,6 +65,12 @@ describe("GET /product/id", () => {
     });
 });
 
-afterAll(() => {     
+afterAll( async () => {   
+    await connection.query(`
+    DELETE FROM users`);   
+    await connection.query(`
+    DELETE FROM sessions`); 
+    await connection.query(`
+    DELETE FROM products`);    
     connection.end();
 });
