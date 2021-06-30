@@ -47,14 +47,7 @@ describe("GET /product/id", () => {
     });
 
     it("returns 404 for a non existing id product", async () => {   
-        const id = parseInt("999999999");
-
-        await connection.query(`
-            SELECT * FROM products 
-            WHERE "productId" = $1            
-        `, [id]);   
-
-        const result = await supertest(app).get(`/product/${id}`).set("Authorization", authHeader);
+        const result = await supertest(app).get(`/product/0`).set("Authorization", authHeader);
         expect(result.status).toEqual(404);
     });
    
@@ -65,7 +58,7 @@ describe("GET /product/id", () => {
     });
 });
 
-afterAll( async () => {   
+afterAll( async () => { 
     await connection.query(`
     DELETE FROM users`);   
     await connection.query(`
