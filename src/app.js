@@ -40,6 +40,35 @@ app.post("/sign-up", async (req, res) => {
   }
 });
 
+app.post("/sign-in", async (req, res) => {
+  try {
+    cleanHTML(req.body);
+    const validBody = schemeSignIn.validate(req.body);
+    if (validBody.error) return res.sendStatus(400);
+    const { email, password } = req.body;
+    const result = await connection.query(
+      `SELECT * FROM users
+          WHERE email = $1`,
+      [email]
+    );
+    const user = result.rows[0];
+    if (user && bcrypt.compareSync(password, user.password)) {
+      const token = uuid();
+      await connection.query(
+        `INSERT INTO sessions ("userId", token)
+          VALUES ($1, $2)`,
+        [user.id, token]
+      );
+      res.send(token);
+    } else {
+      res.sendStatus(401);
+    }
+  } catch (e) {
+    console.log(e);
+    res.sendStatus(500);
+  }
+});
+
 app.get("/teste", (req, res) => {
   res.sendStatus(200);
 });
@@ -97,6 +126,11 @@ const schemeSignUp = joi.object({
   email: joi.string().email().required(),
   password: joi.string().min(6).required(),
 });
+
+const schemeSignIn = joi.object({
+    email: joi.string().email().required(),
+    password: joi.string().min(6).required()
+})
 
 function cleanHTML(objectHTML) {
   for (const keys in objectHTML) {
