@@ -49,7 +49,7 @@ app.get("/product/:id", async (req, res) => {
         const id = parseInt(req.params.id);
 
         const existingId = await connection.query(
-          `SELECT * FROM products WHERE "productId" = $1`, [id]
+          `SELECT * FROM products WHERE id = $1`, [id]
         ); 
         
         const authorization = req.headers['authorization'];
@@ -69,7 +69,7 @@ app.get("/product/:id", async (req, res) => {
         if(user.rows[0] && existingId.rows[0]) {
             const result = await connection.query(`
             SELECT * FROM products 
-            WHERE "productId" = $1            
+            WHERE id = $1            
             `, [id])
 
             res.send({
