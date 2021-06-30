@@ -61,15 +61,6 @@ describe("POST /sign-up", () => {
 
   it("returns 400 for missing inputs (email, name, password)", async () => {
     const body = {
-      email: "christian@teste.com",
-      password: "ChristianPassword",
-    };
-    const result = await supertest(app).post("/sign-up").send(body);
-    expect(result.status).toEqual(400);
-  });
-
-  it("returns 400 for missing inputs (email, name, password)", async () => {
-    const body = {
       name: "Christian",
       password: "ChristianPassword",
     };
@@ -90,10 +81,10 @@ describe("POST /sign-up", () => {
     const body = {
       email: "christian@teste.com",
       name: "Christian",
-      password: "Chris", // less than 6 chars
+      password: "ChristianPassword",
     };
     await supertest(app).post("/sign-up").send(body);
     const result = await supertest(app).post("/sign-up").send(body);
-    expect(result.status).toEqual(400);
+    expect(result.status).toEqual(409);
   });
 });
