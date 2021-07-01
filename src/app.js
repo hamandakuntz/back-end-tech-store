@@ -74,9 +74,9 @@ app.get("/teste", (req, res) => {
 });
 
 app.get("/product/:id", async (req, res) => {
-    try {
+  try {
         const id = parseInt(req.params.id);
-
+       
         const existingId = await connection.query(
           `SELECT * FROM products WHERE id = $1`, [id]
         ); 
@@ -119,6 +119,41 @@ app.get("/product/:id", async (req, res) => {
     }   
 });
 
+app.post("/checkout", async (req, res) => {
+  try {
+    cleanHTML(req.body);
+    const validBody = schemeCheckout.validate(req.body);
+    if (validBody.error) return res.sendStatus(400);
+
+    const authorization = req.headers['authorization'];
+    const token = authorization?.replace('Bearer ', '');               
+  
+    const user = await connection.query(`
+    SELECT * FROM sessions
+    JOIN users
+    ON sessions."userId" = users.id
+    WHERE sessions.token = $1
+    `, [token]);
+
+    if(!token) return res.sendStatus(400);   
+
+    
+  } catch(e) {
+    console.log(e);
+  }
+
+
+});
+
+
+
+
+
+
+
+
+
+
 export { app, connection };
 
 const schemeSignUp = joi.object({
@@ -130,7 +165,17 @@ const schemeSignUp = joi.object({
 const schemeSignIn = joi.object({
     email: joi.string().email().required(),
     password: joi.string().min(6).required()
-})
+});
+
+const acceptedTypes = ['Cartão de crédito', 'Cartão de débito', 'Boleto', 'PIX'];
+
+const schemeCheckout = joi.object({
+    cpf: joi.string().pattern(/^[0-9]{11}$/),
+    celNumber: joi.string().pattern(/^[0-9]{10,11}$/),   
+    adress: joi.string().required(),
+    selection: joi.string().valid(...acceptedTypes).required(),
+    totalPrice: joi.number().integer().required()
+});
 
 function cleanHTML(objectHTML) {
   for (const keys in objectHTML) {
