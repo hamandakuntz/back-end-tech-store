@@ -1,5 +1,5 @@
-import '../src/setup';
-import {app, connection} from '../src/app'
+import setup from '../src/setup.js';
+import {app, connection} from '../src/app.js';
 import supertest from 'supertest';
 import bcrypt from 'bcrypt';
 
@@ -12,7 +12,7 @@ beforeAll(async () => {
     await connection.query(`DELETE FROM users`);
 
     await connection.query(`DELETE FROM sessions`);
-
+    
     const hash = bcrypt.hashSync(fakeUser.password, 10);
 
     const user = await connection.query(`
@@ -26,24 +26,24 @@ beforeAll(async () => {
     
     fakeProductId = await connection.query(`
     INSERT INTO products (name, "availableQuantity", price, description, image, "categoryId")
-    VALUES ($1, $2, $3, $4, $5, $6) RETURNING "productId"`, 
+    VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`, 
     ['TESTING NAME ITEM', 700, 5000, 'TESTING DESCRIPTION', 'https://blog.bydoor.com/wp-content/uploads/2016/10/verdades-e-mitos-sobre-regras-internas-do-condominio.jpeg', 1]);
 });
 
 describe("GET /product/id", () => {    
     it("returns 200 for a authenticated user", async () => {
-        const result = await supertest(app).get(`/product/${fakeProductId.rows[0].productId}`).set("Authorization", authHeader);
+        const result = await supertest(app).get(`/product/${fakeProductId.rows[0].id}`).set("Authorization", authHeader);
         expect(result.status).toEqual(200);
     });
 
     it("returns 400 for a non sended token in the requisition", async () => {      
-        const result = await supertest(app).get(`/product/${fakeProductId.rows[0].productId}`);
+        const result = await supertest(app).get(`/product/${fakeProductId.rows[0].id}`);
         expect(result.status).toEqual(400);
     });
 
     it("returns 401 for a unauthorized token", async () => {
         const newAuthHeader = "Bearer 123";
-        const result = await supertest(app).get(`/product/${fakeProductId.rows[0].productId}`).set("Authorization", newAuthHeader);
+        const result = await supertest(app).get(`/product/${fakeProductId.rows[0].id}`).set("Authorization", newAuthHeader);
         expect(result.status).toEqual(401);
     });
 
@@ -53,7 +53,7 @@ describe("GET /product/id", () => {
     });
    
     it("returns the expected object info", async () => { 
-        const result = await supertest(app).get(`/product/${fakeProductId.rows[0].productId}`).set("Authorization", authHeader); 
+        const result = await supertest(app).get(`/product/${fakeProductId.rows[0].id}`).set("Authorization", authHeader); 
         expect(result.body).toEqual(expect.objectContaining({"name": expect.any(String), "availableQuantity": expect.any(Number), "price": expect.any(Number),
         "description": expect.any(String), "image": expect.any(String), "categoryId": expect.any(Number)})); 
     });
