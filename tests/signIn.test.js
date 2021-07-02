@@ -4,9 +4,8 @@ import supertest from "supertest";
 
 beforeEach(async () => {
   await connection.query(`DELETE FROM sessions`);
-});
+  await connection.query(`DELETE FROM users`);
 
-async () => {
   const body = {
     email: "christian@teste.com",
     name: "Christian",
@@ -14,14 +13,13 @@ async () => {
   };
 
   await supertest(app).post("/sign-up").send(body);
-};
-
+});
 
 describe("POST /sign-in", () => {
   it("returns 200 and a token for valid inputs (email, name, password)", async () => {
     const body = {
       email: "christian@teste.com",
-      password: "ChristianPassword",
+      password: "ChristianPassword"
     };
     const result = await supertest(app).post("/sign-in").send(body);
     expect(result.status).toEqual(200);

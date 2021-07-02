@@ -6,7 +6,8 @@ beforeEach(async () => {
   await connection.query(`DELETE FROM users`);
 });
 
-afterAll( async () => { 
+afterAll(async () => {
+  await connection.query(`DELETE FROM users`);
   connection.end();
 });
 
