@@ -69,10 +69,6 @@ app.post("/sign-in", async (req, res) => {
   }
 });
 
-app.get("/teste", (req, res) => {
-  res.sendStatus(200);
-});
-
 app.get("/product/:id", async (req, res) => {
     try {
         const id = parseInt(req.params.id);
@@ -117,6 +113,49 @@ app.get("/product/:id", async (req, res) => {
     } catch(e) {       
         res.sendStatus(500);
     }   
+});
+
+app.get("/product", async (req, res) => {
+  try {
+    const { name } = req.query;
+    const authorization = req.headers["authorization"];
+    if (!authorization) return res.sendStatus(401);
+    const token = authorization.replace("Bearer ", "");
+    const resultToken = await connection.query(
+      `SELECT * FROM sessions
+        WHERE token = $1`,
+      [token]
+    );
+    if (!resultToken.rowCount) return res.sendStatus(404);
+    const resultProducts = await connection.query(
+      `SELECT * FROM products ${name ? "WHERE name ILIKE $1" : ""}`,
+      name ? [`%${name}%`] : ""
+    );
+    res.send(resultProducts.rows);
+  } catch (e) {
+    console.log(e);
+    res.sendStatus(500);
+  }
+});
+
+app.post("/logout", async (req, res) => {
+  try {
+    const authorization = req.headers["authorization"];
+    console.log(req.headers)
+    if (!authorization) return res.sendStatus(401);
+    const token = authorization.replace("Bearer ", "");
+    const result = await connection.query(
+      `DELETE FROM sessions
+              WHERE token = $1
+              RETURNING *`,
+      [token]
+    );
+    if (!result.rowCount) return res.sendStatus(404);
+    res.send(200);
+  } catch (e) {
+    console.log(e);
+    res.sendStatus(500);
+  }
 });
 
 export { app, connection };

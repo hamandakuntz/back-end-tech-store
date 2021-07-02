@@ -1,3 +1,4 @@
+import '../src/setup';
 import {app, connection} from '../src/app'
 import supertest from 'supertest';
 import bcrypt from 'bcrypt';

@@ -1,3 +1,4 @@
+import '../src/setup';
 import { app, connection } from "../src/app";
 import supertest from "supertest";
 
@@ -5,7 +6,8 @@ beforeEach(async () => {
   await connection.query(`DELETE FROM users`);
 });
 
-afterAll(() => {
+afterAll(async () => {
+  await connection.query(`DELETE FROM users`);
   connection.end();
 });
 
