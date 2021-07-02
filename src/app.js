@@ -7,6 +7,7 @@ import { v4 as uuid } from "uuid";
 import { stripHtml } from "string-strip-html";
 import databaseConfig from "./database.js";
 import dayjs from 'dayjs';
+import sgMail from '@sendgrid/mail';
 
 const app = express();
 app.use(cors());
@@ -178,6 +179,7 @@ app.post("/checkout", async (req, res) => {
     
     const name = user.rows[0]?.name;
     const userId = user.rows[0]?.id;
+    const email = user.rows[0]?.email;
     const date = dayjs();
 
     const { cpf, celNumber, adress, payment, total, cart } = req.body;
@@ -194,6 +196,41 @@ app.post("/checkout", async (req, res) => {
         UPDATE products SET "availableQuantity" = "availableQuantity" - $1 WHERE id = $2        
         `, [item.quantity, item.id])}
       ); 
+      
+     
+        const purchasedItens = cart.map((item, i) => 
+        { return `${item.name} - Quantidade: (${item.quantity}) <br/>
+        Preço unitário: R$ ${(item.price/100).toFixed(2).replace("-","")}
+        <br/><br/>`});
+               
+        const tratedPurchasedItens = purchasedItens.join('');
+        console.log(tratedPurchasedItens);
+
+        sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+        const msg = {
+          to: `${email}`,
+          from: 'techstorech@outlook.com', 
+          subject: 'Sua compra foi finalizada com sucesso!',
+          text: `Sua compra foi finalizada com sucesso!`,
+          html: `Olá ${name}!<br/><br/>
+          <strong>Você comprou o(s) iten(s): </strong><br/>
+          ${tratedPurchasedItens} <br/>
+          No valor total de: <strong>R$${(total/100).toFixed(2).replace("-","")}</strong><br/><br/>
+          <strong>Agradecemos a compra, volte sempre!</strong>`,
+        };
+
+      (async () => {
+        try {
+          await sgMail.send(msg);
+        } catch (error) {
+          console.error(error);
+      
+          if (error.response) {
+            console.error(error.response.body)
+          }
+        }
+      })();
+
       return res.sendStatus(200);
     }
 
