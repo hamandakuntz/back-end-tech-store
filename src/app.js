@@ -143,7 +143,6 @@ app.get("/product", async (req, res) => {
 app.post("/logout", async (req, res) => {
   try {
     const authorization = req.headers["authorization"];
-    console.log(req.headers)
     if (!authorization) return res.sendStatus(401);
     const token = authorization.replace("Bearer ", "");
     const result = await connection.query(
@@ -204,7 +203,6 @@ app.post("/checkout", async (req, res) => {
         <br/><br/>`});
                
         const tratedPurchasedItens = purchasedItens.join('');
-        console.log(tratedPurchasedItens);
 
         sgMail.setApiKey(process.env.SENDGRID_API_KEY);
         const msg = {
