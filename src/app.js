@@ -6,6 +6,7 @@ import joi from "joi";
 import { v4 as uuid } from "uuid";
 import { stripHtml } from "string-strip-html";
 import databaseConfig from "./database.js";
+import dayjs from 'dayjs';
 
 const app = express();
 app.use(cors());
@@ -120,11 +121,12 @@ app.get("/product/:id", async (req, res) => {
 });
 
 app.post("/checkout", async (req, res) => {
-  try {
-    cleanHTML(req.body);
+  
+  try { 
+    cleanHTML(req.body);  
     const validBody = schemeCheckout.validate(req.body);
     if (validBody.error) return res.sendStatus(400);
-
+    
     const authorization = req.headers['authorization'];
     const token = authorization?.replace('Bearer ', '');               
   
@@ -133,23 +135,34 @@ app.post("/checkout", async (req, res) => {
     JOIN users
     ON sessions."userId" = users.id
     WHERE sessions.token = $1
-    `, [token]);
-
-    if(!token) return res.sendStatus(400);   
-
+    `, [token]);    
     
+    const name = user.rows[0]?.name;
+    const userId = user.rows[0]?.id;
+    const date = dayjs();
+
+    const { cpf, celNumber, adress, payment, total, cart } = req.body;
+
+    if(!user.rows[0]) return res.sendStatus(404);
+
+    if(user.rows[0]){
+      await connection.query(`INSERT INTO checkout ("clientName", "userId", cpf, "celNumber", date, adress, payment, total) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
+      , [name, userId, cpf, celNumber, date, adress, payment, total]);
+      
+      cart.forEach( async (item, index) => {              
+        await connection.query(`
+        UPDATE products SET "availableQuantity" = "availableQuantity" - $1 WHERE id = $2        
+        `, [item.quantity, item.id])}
+      ); 
+      return res.sendStatus(200);
+    }
+
   } catch(e) {
     console.log(e);
+    res.sendStatus(500);
   }
-
-
 });
-
-
-
-
-
-
 
 
 
@@ -173,8 +186,9 @@ const schemeCheckout = joi.object({
     cpf: joi.string().pattern(/^[0-9]{11}$/),
     celNumber: joi.string().pattern(/^[0-9]{10,11}$/),   
     adress: joi.string().required(),
-    selection: joi.string().valid(...acceptedTypes).required(),
-    totalPrice: joi.number().integer().required()
+    payment: joi.string().valid(...acceptedTypes).required(),
+    total: joi.number().integer().required(),
+    cart: joi.required(),
 });
 
 function cleanHTML(objectHTML) {
