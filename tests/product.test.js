@@ -49,13 +49,33 @@ describe("GET /product", () => {
     );
   });
 
+    it("returns 200 and a array of products for valid token and queryString", async () => {
+      const result = await supertest(app)
+        .get("/product?name=mou")
+        .set("Authorization", `Bearer ${token.text}`);
+      expect(result.status).toEqual(200);
+      expect(result.body).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            availableQuantity: expect.any(Number),
+            categoryId: expect.any(Number),
+            description: expect.any(String),
+            id: expect.any(Number),
+            image: expect.any(String),
+            name: "Mouse",
+            price: expect.any(Number),
+          }),
+        ])
+      );
+    });
+
   it("returns 401 when there's no token", async () => {
     const result = await supertest(app)
       .get("/product")
       .set("Authorization", ``);
     expect(result.status).toEqual(401);
   });
-  
+
   it("returns 404 when the token is invalid", async () => {
     const result = await supertest(app)
       .get("/product")
